@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { config } from '../config';
 
 const QuizQuestion = ({ children }) => {
     const [questionData, setQuestionData] = useState(null);
@@ -50,10 +51,11 @@ const QuizQuestion = ({ children }) => {
         }
 
         try {
-            const response = await fetch(`http://localhost:8000/api/pages/${pageId}/questions`, {
+            const response = await fetch(`${config.apiUrl}/api/pages/${pageId}/questions`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    // hardcoded API key for testing purposes
                     'api-key': 'test_key'
                 },
                 body: JSON.stringify(questionData)
@@ -74,9 +76,11 @@ const QuizQuestion = ({ children }) => {
         if (!pageId || !isActive) return;
 
         try {
-            const response = await fetch(`http://localhost:8000/api/pages/${pageId}/close-question`, {
+            // const response = await fetch(`http://localhost:8000/api/pages/${pageId}/close-question`, {
+            const response = await fetch(`${config.apiUrl}/api/pages/${pageId}/close-question`, {
                 method: 'POST',
                 headers: {
+                    // hardcoded API key for testing purposes
                     'api-key': 'test_key'
                 }
             });

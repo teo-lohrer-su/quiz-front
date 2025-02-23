@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { config } from '../config';
 
 const QuizInit = ({ title, description }) => {
   const [pageId, setPageId] = useState(null);
@@ -9,10 +10,11 @@ const QuizInit = ({ title, description }) => {
   useEffect(() => {
     const createQuiz = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/pages/', {
+        const response = await fetch(`${config.apiUrl}/api/pages/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            // Hardcoded API key for testing purposes
             'api-key': 'test_key'
           },
           body: JSON.stringify({ title, description })
@@ -36,7 +38,7 @@ const QuizInit = ({ title, description }) => {
 
     const pollStudentCount = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/pages/${pageId}`);
+        const response = await fetch(`${config.apiUrl}/api/pages/${pageId}`);
         if (!response.ok) throw new Error('Failed to fetch quiz data');
         
         const data = await response.json();

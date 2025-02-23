@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { config } from '../config';
 
 const StudentView = () => {
   const [pageData, setPageData] = useState(null);
@@ -18,7 +19,7 @@ const StudentView = () => {
 
     const pollServer = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/pages/${pageId}`);
+        const response = await fetch(`${config.apiUrl}/api/pages/${pageId}`);
         if (!response.ok) throw new Error('Failed to fetch quiz data');
 
         const data = await response.json();
@@ -47,7 +48,7 @@ const StudentView = () => {
     if (!pageId || hasAnswered) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/api/pages/${pageId}/answers`, {
+      const response = await fetch(`${config.apiUrl}/api/pages/${pageId}/answers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

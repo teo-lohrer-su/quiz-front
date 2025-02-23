@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:staging": "vite build --mode staging",
+    "build:prod": "vite build --mode production"
   },
   "dependencies": {
     "@lit-labs/react": "^2.1.3",
