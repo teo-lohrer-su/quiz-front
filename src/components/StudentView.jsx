@@ -1,6 +1,8 @@
-// import React, { useState, useEffect } from 'react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { config } from '../config';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const StudentView = () => {
   const [pageData, setPageData] = useState(null);
@@ -33,7 +35,7 @@ const StudentView = () => {
 
         setPageData(data);
         setError(null);
-      } catch {
+      } catch (err) {
         setError('Failed to connect to quiz server');
       }
     };
@@ -82,7 +84,7 @@ const StudentView = () => {
       if (!response.ok) throw new Error('Failed to submit answer');
 
       setHasAnswered(true);
-    } catch {
+    } catch (err) {
       setError('Failed to submit answer');
     }
   };
@@ -125,9 +127,29 @@ const StudentView = () => {
         {/* Current question or waiting state */}
         {pageData.current_question ? (
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">
-              {pageData.current_question.text}
-            </h2>
+            <div className="text-lg font-medium text-gray-900 mb-4 question-text">
+              <ReactMarkdown
+                components={{
+                  code({node, inline, className, children, ...props}) {
+                    const match = /language-(\w+)/.exec(className || '')
+                    return !inline && match ? (
+                      <SyntaxHighlighter
+                        style={atomDark}
+                        language={match[1]}
+                        PreTag="div"
+                        {...props}
+                      >{String(children).replace(/\n$/, '')}</SyntaxHighlighter>
+                    ) : (
+                      <code className={className} {...props}>
+                        {children}
+                      </code>
+                    )
+                  }
+                }}
+              >
+                {pageData.current_question.text}
+              </ReactMarkdown>
+            </div>
 
             <div className="space-y-3">
               {pageData.current_question.options.map((option, index) => (
@@ -157,7 +179,29 @@ const StudentView = () => {
                       </svg>
                     )}
                   </div>
-                  <span>{option.text}</span>
+                  <span className="option-text">
+                    <ReactMarkdown
+                      components={{
+                        code({node, inline, className, children, ...props}) {
+                          const match = /language-(\w+)/.exec(className || '')
+                          return !inline && match ? (
+                            <SyntaxHighlighter
+                              style={atomDark}
+                              language={match[1]}
+                              PreTag="div"
+                              {...props}
+                            >{String(children).replace(/\n$/, '')}</SyntaxHighlighter>
+                          ) : (
+                            <code className={className} {...props}>
+                              {children}
+                            </code>
+                          )
+                        }
+                      }}
+                    >
+                      {option.text}
+                    </ReactMarkdown>
+                  </span>
                 </button>
               ))}
             </div>
