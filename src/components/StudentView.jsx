@@ -50,6 +50,8 @@ const StudentView = () => {
   const handleOptionToggle = (optionIndex) => {
     if (hasAnswered || !pageData.current_question.active) return;
     
+    // Get the allow_multiple flag directly from the API response
+    // This fixes the mismatch between backend and frontend property names
     const isMultiple = pageData.current_question.allow_multiple;
     
     if (isMultiple) {
@@ -109,7 +111,51 @@ const StudentView = () => {
     );
   }
 
-  const isMultipleChoice = pageData.current_question?.allow_multiple || false;
+  // Correctly determine if multiple selection is allowed using the property from the backend
+  const isMultipleChoice = pageData.current_question?.allow_multiple;
+
+  // Function to unescape special characters
+  const unescapeString = (str) => {
+    if (!str) return '';
+    
+    // Handle JSON escaping
+    return str
+      .replace(/\\n/g, '\n')
+      .replace(/\\t/g, '\t')
+      .replace(/\\r/g, '\r')
+      .replace(/\\"/g, '"')
+      .replace(/\\\\/g, '\\');
+  };
+
+  // Helper function to render markdown content
+  const renderMarkdown = (content) => {
+    // First unescape the content if it has escaped sequences
+    const unescapedContent = unescapeString(content);
+    
+    return (
+      <ReactMarkdown
+        components={{
+          code({node, inline, className, children, ...props}) {
+            const match = /language-(\w+)/.exec(className || '')
+            return !inline && match ? (
+              <SyntaxHighlighter
+                style={atomDark}
+                language={match[1]}
+                PreTag="div"
+                {...props}
+              >{String(children).replace(/\n$/, '')}</SyntaxHighlighter>
+            ) : (
+              <code className={className} {...props}>
+                {children}
+              </code>
+            )
+          }
+        }}
+      >
+        {unescapedContent}
+      </ReactMarkdown>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -128,28 +174,15 @@ const StudentView = () => {
         {pageData.current_question ? (
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-lg font-medium text-gray-900 mb-4 question-text">
-              <ReactMarkdown
-                components={{
-                  code({node, inline, className, children, ...props}) {
-                    const match = /language-(\w+)/.exec(className || '')
-                    return !inline && match ? (
-                      <SyntaxHighlighter
-                        style={atomDark}
-                        language={match[1]}
-                        PreTag="div"
-                        {...props}
-                      >{String(children).replace(/\n$/, '')}</SyntaxHighlighter>
-                    ) : (
-                      <code className={className} {...props}>
-                        {children}
-                      </code>
-                    )
-                  }
-                }}
-              >
-                {pageData.current_question.text}
-              </ReactMarkdown>
+              {renderMarkdown(pageData.current_question.text)}
             </div>
+            
+            {/* Instruction for multiple choice questions */}
+            {isMultipleChoice && (
+              <div className="text-sm text-blue-600 mb-3">
+                Select all correct answers (multiple selection allowed)
+              </div>
+            )}
 
             <div className="space-y-3">
               {pageData.current_question.options.map((option, index) => (
@@ -157,7 +190,7 @@ const StudentView = () => {
                   key={index}
                   onClick={() => handleOptionToggle(index)}
                   disabled={hasAnswered || !pageData.current_question.active}
-                  className={`w-full p-4 text-left rounded-lg border transition-colors flex items-center
+                  className={`w-full p-4 text-left rounded-lg border transition-colors flex items-start
                     ${selectedOptions.includes(index)
                       ? 'bg-blue-50 border-blue-500 text-blue-700'
                       : 'border-gray-200 hover:bg-gray-50'
@@ -168,7 +201,7 @@ const StudentView = () => {
                     }
                   `}
                 >
-                  <div className={`w-5 h-5 mr-3 flex-shrink-0 border rounded ${isMultipleChoice ? 'rounded-sm' : 'rounded-full'} 
+                  <div className={`w-5 h-5 mt-1 mr-3 flex-shrink-0 border rounded ${isMultipleChoice ? 'rounded-sm' : 'rounded-full'} 
                     ${selectedOptions.includes(index) 
                       ? 'bg-blue-500 border-blue-500' 
                       : 'border-gray-300'}`
@@ -179,29 +212,9 @@ const StudentView = () => {
                       </svg>
                     )}
                   </div>
-                  <span className="option-text">
-                    <ReactMarkdown
-                      components={{
-                        code({node, inline, className, children, ...props}) {
-                          const match = /language-(\w+)/.exec(className || '')
-                          return !inline && match ? (
-                            <SyntaxHighlighter
-                              style={atomDark}
-                              language={match[1]}
-                              PreTag="div"
-                              {...props}
-                            >{String(children).replace(/\n$/, '')}</SyntaxHighlighter>
-                          ) : (
-                            <code className={className} {...props}>
-                              {children}
-                            </code>
-                          )
-                        }
-                      }}
-                    >
-                      {option.text}
-                    </ReactMarkdown>
-                  </span>
+                  <div className="option-text flex-grow">
+                    {renderMarkdown(option.text)}
+                  </div>
                 </button>
               ))}
             </div>
@@ -211,7 +224,7 @@ const StudentView = () => {
                 onClick={handleSubmitAnswer}
                 className="mt-4 w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Submit Answer{isMultipleChoice && 's'}
+                Submit Answer{isMultipleChoice && selectedOptions.length > 1 ? 's' : ''}
               </button>
             )}
 

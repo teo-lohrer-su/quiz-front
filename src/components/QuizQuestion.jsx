@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { config } from '../config';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const QuizQuestion = ({ children }) => {
     const [questionData, setQuestionData] = useState(null);
@@ -76,7 +79,6 @@ const QuizQuestion = ({ children }) => {
         if (!pageId || !isActive) return;
 
         try {
-            // const response = await fetch(`http://localhost:8000/api/pages/${pageId}/close-question`, {
             const response = await fetch(`${config.apiUrl}/api/pages/${pageId}/close-question`, {
                 method: 'POST',
                 headers: {
@@ -97,10 +99,38 @@ const QuizQuestion = ({ children }) => {
 
     if (!questionData) return null;
 
+    const renderMarkdown = (content) => (
+        <ReactMarkdown
+            components={{
+                code({node, inline, className, children, ...props}) {
+                    const match = /language-(\w+)/.exec(className || '')
+                    return !inline && match ? (
+                        <SyntaxHighlighter
+                            style={atomDark}
+                            language={match[1]}
+                            PreTag="div"
+                            {...props}
+                        >
+                            {String(children).replace(/\n$/, '')}
+                        </SyntaxHighlighter>
+                    ) : (
+                        <code className={className} {...props}>
+                            {children}
+                        </code>
+                    )
+                }
+            }}
+        >
+            {content}
+        </ReactMarkdown>
+    );
+
     return (
         <div className="p-4 border rounded-lg bg-white shadow-sm">
             <div className="mb-4">
-                <h3 className="text-lg font-semibold">{questionData.text}</h3>
+                <div className="text-lg font-semibold">
+                    {renderMarkdown(questionData.text)}
+                </div>
                 <div className="mt-2 space-y-2">
                     {questionData.options.map((option, index) => (
                         <div
@@ -108,7 +138,7 @@ const QuizQuestion = ({ children }) => {
                             className={`p-2 rounded ${option.is_correct ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
                                 } border`}
                         >
-                            {option.text}
+                            {renderMarkdown(option.text)}
                         </div>
                     ))}
                 </div>
@@ -146,7 +176,7 @@ const QuizQuestion = ({ children }) => {
                         {Object.entries(stats.option_stats).map(([index, stat]) => (
                             <div key={index} className="flex flex-col">
                                 <div className="flex justify-between text-sm">
-                                    <span>{questionData.options[parseInt(index)].text}</span>
+                                    <span>{renderMarkdown(questionData.options[parseInt(index)].text)}</span>
                                     <span>{stat.percentage.toFixed(1)}% ({stat.count})</span>
                                 </div>
                                 <div className="h-2 bg-gray-200 rounded overflow-hidden">
